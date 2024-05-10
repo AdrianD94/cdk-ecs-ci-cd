@@ -30,14 +30,14 @@ interface Props extends StackProps {
 }
 
 const secretConfig = {
-    arn: 'arn:aws:secretsmanager:eu-central-1:123456789012:secret:github/token',
+    arn: 'arn:aws:secretsmanager:eu-central-1:572707288963:secret:github/token-pM7lJI',
     id: 'github/token'
 }
 
 const githubConfig = {
-    owner: 'exanubes',
-    repo: 'ecs-fargate-ci-cd-pipeline',
-    branch: 'master'
+    owner: 'AdrianD94',
+    repo: 'cdk-ecs-ci-cd',
+    branch: 'main'
 }
 
 export class PipelineStack extends Stack {
@@ -106,7 +106,7 @@ export class PipelineStack extends Stack {
                 owner: githubConfig.owner,
                 repo: githubConfig.repo,
                 branch: githubConfig.branch,
-                oauthToken: SecretValue.secretsManager("github/cdk-pipeline"),
+                oauthToken: SecretValue.secretsManager("github/token"),
                 output: artifacts.source,
                 trigger: GitHubTrigger.WEBHOOK,
             }),
