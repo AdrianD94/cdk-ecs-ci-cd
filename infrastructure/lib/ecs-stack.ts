@@ -3,12 +3,18 @@ import { IVpc } from "aws-cdk-lib/aws-ec2";
 import { IRepository } from "aws-cdk-lib/aws-ecr";
 import { Cluster, ContainerDefinition, CpuArchitecture, EcrImage, OperatingSystemFamily } from "aws-cdk-lib/aws-ecs";
 import { ApplicationLoadBalancedFargateService } from "aws-cdk-lib/aws-ecs-patterns";
+import { HostedZone } from "aws-cdk-lib/aws-route53";
 
 import { Construct } from "constructs";
 
 interface CustomProps extends StackProps {
     vpc: IVpc;
-    repository: IRepository
+    repository: IRepository,
+    desiredCount:number,
+    domain:{
+        domainName:string,
+        hostedZone:string;
+    }
 }
 
 export class EcsStack extends Stack {
@@ -28,7 +34,7 @@ export class EcsStack extends Stack {
         this.fargate = new ApplicationLoadBalancedFargateService(this, 'webshot-fargate', {
             assignPublicIp: true,
             cluster: this.cluster,
-            desiredCount: 1,
+            desiredCount: props.desiredCount,
             publicLoadBalancer: true,
             taskImageOptions: {
                 image: EcrImage.fromEcrRepository(props.repository),
@@ -37,7 +43,12 @@ export class EcsStack extends Stack {
             runtimePlatform: {
                 cpuArchitecture: CpuArchitecture.ARM64,
                 operatingSystemFamily: OperatingSystemFamily.LINUX
-            }
+            },
+            domainName: props.domain.domainName,
+  domainZone: HostedZone.fromHostedZoneAttributes(this, "HostedZone", {
+    hostedZoneId: props.domain.hostedZone,
+    zoneName: props.domain.hostedZone,
+  }),
         })
     }
 }

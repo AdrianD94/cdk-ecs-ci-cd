@@ -17,21 +17,29 @@ import {
     CodeBuildAction,
     EcsDeployAction,
     GitHubSourceAction,
-    GitHubTrigger
+    GitHubTrigger,
+    ManualApprovalAction,
+    
 } from "aws-cdk-lib/aws-codepipeline-actions";
 
 
 
 interface Props extends StackProps {
     repository: IRepository
+    devEnv: IEnvService,
+    qaEnv: IEnvService
+}
+
+interface IEnvService{
     service: IBaseService
     cluster: ICluster
     container: ContainerDefinition
+    
 }
 
 const secretConfig = {
-    arn: 'arn:aws:secretsmanager:eu-central-1:572707288963:secret:github/token-pM7lJI',
-    id: 'github/token'
+    arn: 'arn:aws:secretsmanager:eu-central-1:572707288963:secret:github/token2-EEYh7E',
+    id: 'github/token2'
 }
 
 const githubConfig = {
@@ -82,7 +90,7 @@ export class PipelineStack extends Stack {
                     value: secretConfig.arn,
                 },
                 CONTAINER_NAME: {
-                    value: props.container.containerName,
+                    value: props.devEnv.container.containerName,
                 },
             },
         })
@@ -106,7 +114,7 @@ export class PipelineStack extends Stack {
                 owner: githubConfig.owner,
                 repo: githubConfig.repo,
                 branch: githubConfig.branch,
-                oauthToken: SecretValue.secretsManager("github/token"),
+                oauthToken: SecretValue.secretsManager("github/token2"),
                 output: artifacts.source,
                 trigger: GitHubTrigger.WEBHOOK,
             }),
@@ -116,9 +124,18 @@ export class PipelineStack extends Stack {
                 input: artifacts.source,
                 outputs: [artifacts.build],
             }),
-            deploy: new EcsDeployAction({
+            devDeploy: new EcsDeployAction({
                 actionName: "ECSDeploy",
-                service: props.service,
+                service: props.devEnv.service,
+                imageFile: new ArtifactPath(
+                    artifacts.build,
+                    "docker_image_definition.json"
+                ),
+            }),
+            manulApprove: new ManualApprovalAction({actionName: 'Approve'}),
+             qaDeploy: new EcsDeployAction({
+                actionName: "ECSDeploy",
+                service: props.qaEnv.service,
                 imageFile: new ArtifactPath(
                     artifacts.build,
                     "docker_image_definition.json"
@@ -131,7 +148,9 @@ export class PipelineStack extends Stack {
             stages: [
                 { stageName: "Source", actions: [pipelineActions.source] },
                 { stageName: "Build", actions: [pipelineActions.build] },
-                { stageName: "Deploy", actions: [pipelineActions.deploy] },
+                { stageName: "devDeploy", actions: [pipelineActions.devDeploy] },
+                { stageName: "Approve", actions: [pipelineActions.manulApprove] },
+                { stageName: "qaDeploy", actions: [pipelineActions.qaDeploy] },
             ],
         })
 
