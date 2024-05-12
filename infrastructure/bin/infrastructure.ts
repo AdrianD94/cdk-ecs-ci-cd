@@ -16,28 +16,30 @@ async function start(){
   const vpc = new VpcStack(app, VpcStack.name, {env});
   const ecsDev = new EcsStack(app, `${EcsStack.name}-dev`, { repository: ecr.repository, vpc: vpc.vpc,env, desiredCount:1, domain:{
     domainName:'dev.adriandrozman.com',
-    hostedZone:'Z00158631CR24AXUM6EHW'
-  } })
-  // const ecsQa = new EcsStack(app, `${EcsStack.name}-qa`, { repository: ecr.repository, vpc: vpc.vpc,env, desiredCount:2, route53:{
-  //    domainName:'qa.adriandrozman.com',
-  //     hostedZone:'Z08040952VB4K1BZLXQF8'
-  // } })
+    hostedZone:'dev.adriandrozman.com',
+    hostedId: 'Z030646332QSQ7C1FYSFG'
+  },environment:'dev' })
+  const ecsQa = new EcsStack(app, `${EcsStack.name}-qa`, { repository: ecr.repository, vpc: vpc.vpc,env, desiredCount:2, domain:{
+     domainName:'qa.adriandrozman.com',
+      hostedZone:'Z08040952VB4K1BZLXQF8',
+      hostedId:''
+  },environment:'qa' })
 
   
-  // new PipelineStack(app, PipelineStack.name, {
-  //   repository: ecr.repository,
-  //   devEnv:{
-  //     service: ecsDev.fargate.service,
-  //     cluster: ecsDev.cluster,
-  //     container: ecsDev.fargate.taskDefinition.defaultContainer as any,
-  //   },
-  //   qaEnv:{
-  //      service: ecsQa.fargate.service,
-  //     cluster: ecsQa.cluster,
-  //     container: ecsQa.fargate.taskDefinition.defaultContainer as any,
-  //   },
-  //   env,
-  // })
+  new PipelineStack(app, PipelineStack.name, {
+    repository: ecr.repository,
+    devEnv:{
+      service: ecsDev.fargate.service,
+      cluster: ecsDev.cluster,
+      container: ecsDev.fargate.taskDefinition.defaultContainer as any,
+    },
+    qaEnv:{
+       service: ecsQa.fargate.service,
+      cluster: ecsQa.cluster,
+      container: ecsQa.fargate.taskDefinition.defaultContainer as any,
+    },
+    env,
+  })
 
 }
 start().catch(error=>console.log(error));

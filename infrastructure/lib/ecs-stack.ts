@@ -14,7 +14,9 @@ interface CustomProps extends StackProps {
     domain:{
         domainName:string,
         hostedZone:string;
-    }
+        hostedId:string;
+    },
+    environment:string
 }
 
 export class EcsStack extends Stack {
@@ -25,13 +27,13 @@ export class EcsStack extends Stack {
     constructor(scope: Construct, id: string, props: CustomProps) {
         super(scope, id, props);
 
-        this.cluster = new Cluster(this, 'webshot-ecs', {
-            clusterName: 'webshot-cluster',
+        this.cluster = new Cluster(this, `webshot-ecs-${props.environment}`, {
+            clusterName: `webshot-cluster-${props.environment}`,
             containerInsights: true,
             vpc: props.vpc,
         });
 
-        this.fargate = new ApplicationLoadBalancedFargateService(this, 'webshot-fargate', {
+        this.fargate = new ApplicationLoadBalancedFargateService(this, `webshot-fargate-${props.environment}`, {
             assignPublicIp: true,
             cluster: this.cluster,
             desiredCount: props.desiredCount,
@@ -44,11 +46,11 @@ export class EcsStack extends Stack {
                 cpuArchitecture: CpuArchitecture.ARM64,
                 operatingSystemFamily: OperatingSystemFamily.LINUX
             },
-            domainName: props.domain.domainName,
-  domainZone: HostedZone.fromHostedZoneAttributes(this, "HostedZone", {
-    hostedZoneId: props.domain.hostedZone,
-    zoneName: props.domain.hostedZone,
-  }),
+//             domainName: props.domain.domainName,
+//   domainZone: HostedZone.fromHostedZoneAttributes(this, "HostedZone", {
+//     hostedZoneId: props.domain.hostedId,
+//     zoneName: props.domain.hostedZone,
+//   }),
         })
     }
 }
